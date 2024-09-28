@@ -1,11 +1,15 @@
-version: '3.8'
-
+version: '3'
 services:
   app:
     build: .
     ports:
-      - "8080:8080"
+      - "8082:8080"
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 1m  # Increase the interval
+      timeout: 10s    # Set a longer timeout
+      retries: 5     # Increase retries
 
   prometheus:
     image: prom/prometheus
@@ -13,6 +17,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    restart: always
 
   grafana:
     image: grafana/grafana
@@ -20,3 +25,4 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: always
