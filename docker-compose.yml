@@ -1,28 +1,68 @@
-version: '3'
 services:
+
+  # ── Spring Boot self-healing app ─────────────────────────────────────────────
   app:
     build: .
     ports:
       - "8082:8080"
+    environment:
+      - GRAFANA_URL=http://grafana:3000
+      - GRAFANA_USERNAME=admin
+      - GRAFANA_PASSWORD=admin
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 1m  # Increase the interval
-      timeout: 10s    # Set a longer timeout
-      retries: 5     # Increase retries
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
+  # ── Prometheus ────────────────────────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:latest
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert.rules.yml:/etc/prometheus/alert.rules.yml
     ports:
       - "9090:9090"
     restart: always
 
-  grafana:
-    image: grafana/grafana
+  # ── Alertmanager ─────────────────────────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:latest
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
     ports:
-      - "3000:3000"
+      - "9093:9093"
+    restart: always
+
+  # ── Self-healer webhook (restarts app when AppDown fires) ────────────────────
+  self-healer:
+    build: ./self-healer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "5001:5000"
+    restart: always
+    depends_on:
+      - app
+
+  # ── Grafana ───────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-storage:/var/lib/grafana
     restart: always
+    depends_on:
+      - prometheus
+
+volumes:
+  grafana-storage:

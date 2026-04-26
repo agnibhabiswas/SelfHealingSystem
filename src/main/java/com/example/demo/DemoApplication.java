@@ -18,13 +18,6 @@ public class DemoApplication {
         public ResponseEntity<String> health() {
             return ResponseEntity.ok("Healthy");
         }
-
-        public static void main(String[] args) {
-            SpringApplication.run(DemoApplication.class, args);
-
-            // Call the Grafana API automation
-            GrafanaApiAutomation.main(args); // Call the main method of GrafanaApiAutomation
-        }
     }
 }
 

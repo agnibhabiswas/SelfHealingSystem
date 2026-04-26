@@ -11,9 +11,9 @@ import org.json.JSONObject;
 
 public class GrafanaApiAutomation {
 
-    private static final String GRAFANA_URL = "http://localhost:3000";
-    private static final String USERNAME = "admin"; // Your Grafana username
-    private static final String PASSWORD = "admin"; // Your Grafana password
+    private static final String GRAFANA_URL = System.getenv().getOrDefault("GRAFANA_URL", "http://localhost:3001");
+    private static final String USERNAME = System.getenv().getOrDefault("GRAFANA_USERNAME", "admin");
+    private static final String PASSWORD = System.getenv().getOrDefault("GRAFANA_PASSWORD", "admin");
 
     public static void main(String[] args) {
         String token = login();

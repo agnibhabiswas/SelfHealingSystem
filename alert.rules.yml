@@ -1,0 +1,29 @@
+groups:
+  - name: self-healing
+    rules:
+      - alert: AppDown
+        expr: up{job="spring-boot-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Spring Boot app is unreachable"
+          description: "The app target has been down for more than 30 seconds. Triggering restart."
+
+      - alert: HighHeapUsage
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} * 100 > 85
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM heap usage above 85%"
+          description: "Heap at {{ printf \"%.1f\" $value }}% for more than 1 minute."
+
+      - alert: SlowHttpRequests
+        expr: rate(http_server_requests_seconds_sum[1m]) / rate(http_server_requests_seconds_count[1m]) > 2
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Average HTTP response time above 2s"
+          description: "Average latency is {{ printf \"%.2f\" $value }}s over the last minute."
